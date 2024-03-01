@@ -1,11 +1,13 @@
 spring:
   application:
     name: Learning
-    #kafka
-kafka:
-  hosts: 42.192.111.87:9092
-  group: ${spring.application.name}
-  producer:
-    retries: 10
-    key-serializer: org.apache.kafka.common.serialization.StringSerializer
-    value-serializer: org.apache.kafka.common.serialization.StringSerializer
+  kafka:
+    streams:
+      application-id: my-kafka-streams-app
+      bootstrap-servers: 42.192.111.87:9092
+    consumer:
+      group-id: my-group
+    producer:
+      retries: 0
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer

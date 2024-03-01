@@ -1,10 +1,5 @@
 package com.learning.kafka;
 
-/**
- * @description: TODO
- * @author: tf
- * @date: 2024å¹´03æœˆ01æ—¥ 15:35
- */
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KafkaStreams;
@@ -15,48 +10,56 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.state.KeyValueStore;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
-public class WordCount {
 
-    public static void main(String[] args) throws Exception {
+/**
+ * ²âÊÔÀà
+ *
+ * @description: TODO
+ * @author: tf
+ * @date: 2024Äê03ÔÂ01ÈÕ 16:07
+ */
+public class kafkaTest {
+
+    private String stateDir = "E:\\develop\\projects\\kafka";
+
+    @Test
+    public void wordCount() {
         /**
-         *  1.åˆ›å»ºä¸€ä¸ªjava.util.Propertiesæ˜ å°„æ¥æŒ‡å®šåœ¨StreamsConfigé…ç½®å€¼ã€‚
-         *  ï¼ˆ1ï¼‰BOOTSTRAP_SERVERS_CONFIGï¼Œå®ƒæŒ‡å®šäº†ä¸€ä¸ªä¸»æœº/ç«¯å£å¯¹ï¼Œè¡¨ç¤ºKafkaåœ°å€ï¼›
-         *  ï¼ˆ2ï¼‰APPLICATION_ID_CONFIGï¼Œå®ƒæä¾›äº†Streamsåº”ç”¨ç¨‹åºçš„å”¯ä¸€æ ‡è¯†ç¬¦ï¼›
-         *  ï¼ˆ3ï¼‰å…¶ä»–é…ç½®ï¼Œä¾‹å¦‚ï¼Œè®°å½•é”®å€¼å¯¹çš„é»˜è®¤åºåˆ—åŒ–å’Œååºåˆ—åŒ–åº“
+         *  1.´´½¨Ò»¸öjava.util.PropertiesÓ³ÉäÀ´Ö¸¶¨ÔÚStreamsConfigÅäÖÃÖµ¡£
+         *  £¨1£©BOOTSTRAP_SERVERS_CONFIG£¬ËüÖ¸¶¨ÁËÒ»¸öÖ÷»ú/¶Ë¿Ú¶Ô£¬±íÊ¾KafkaµØÖ·£»
+         *  £¨2£©APPLICATION_ID_CONFIG£¬ËüÌá¹©ÁËStreamsÓ¦ÓÃ³ÌĞòµÄÎ¨Ò»±êÊ¶·û£»
+         *  £¨3£©ÆäËûÅäÖÃ£¬ÀıÈç£¬¼ÇÂ¼¼üÖµ¶ÔµÄÄ¬ÈÏĞòÁĞ»¯ºÍ·´ĞòÁĞ»¯¿â
          */
         Properties props = new Properties();
-        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "42.42.192.111.87:9092");
+        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "42.192.111.87:9092");
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, "streams-wordcount");
         props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
-
+        props.put(StreamsConfig.STATE_DIR_CONFIG, stateDir);
         /**
-         * 2.å®šä¹‰Streamsåº”ç”¨ç¨‹åºçš„è®¡ç®—é€»è¾‘ã€‚
-         *   (1)å®šä¹‰ä¸ºè¿æ¥å¤„ç†å™¨èŠ‚ç‚¹çš„æ‹“æ‰‘ï¼›
+         * 2.¶¨ÒåStreamsÓ¦ÓÃ³ÌĞòµÄ¼ÆËãÂß¼­¡£
+         *   (1)¶¨ÒåÎªÁ¬½Ó´¦ÀíÆ÷½ÚµãµÄÍØÆË£»
          */
         final StreamsBuilder builder = new StreamsBuilder();
         KStream<String, String> source = builder.stream("streams-plaintext-input");
-        source.flatMapValues(value -> Arrays.asList(value.toLowerCase(Locale.getDefault()).split("\\W+")))
-                .groupBy((key, value) -> value)
-                .count(Materialized.<String, Long, KeyValueStore<Bytes, byte[]>>as("counts-store"))
-                .toStream()
-                .to("streams-wordcount-output", Produced.with(Serdes.String(), Serdes.Long()));
+        source.flatMapValues(value -> Arrays.asList(value.toLowerCase(Locale.getDefault()).split("\\W+"))).groupBy((key, value) -> value).count(Materialized.<String, Long, KeyValueStore<Bytes, byte[]>>as("counts-store")).toStream().to("streams-wordcount-output", Produced.with(Serdes.String(), Serdes.Long()));
         final Topology topology = builder.build();
         /**
-         * ï¼ˆ2ï¼‰å°†æ‹“æ‰‘å›¾æ”¾å…¥KafkaStreamsæµclientä¸­
+         * £¨2£©½«ÍØÆËÍ¼·ÅÈëKafkaStreamsÁ÷clientÖĞ
          */
         final KafkaStreams streams = new KafkaStreams(topology, props);
 
 
         /**
-         * 3.å¯åŠ¨streamæµï¼Œè®©å…¶ä¸€ç›´è¿è¡Œ
-         * é€šè¿‡è°ƒç”¨å®ƒçš„start()å‡½æ•°ï¼Œæˆ‘ä»¬å¯ä»¥è§¦å‘è¿™ä¸ªå®¢æˆ·æœºçš„æ‰§è¡Œã€‚åœ¨æ­¤å®¢æˆ·æœºä¸Šè°ƒç”¨close()ä¹‹å‰ï¼Œæ‰§è¡Œä¸ä¼šåœæ­¢ã€‚
-         * ä¾‹å¦‚ï¼Œæˆ‘ä»¬å¯ä»¥æ·»åŠ ä¸€ä¸ªå¸¦æœ‰å€’è®¡æ—¶é”é—©çš„å…³æœºé’©å­æ¥æ•è·ç”¨æˆ·ä¸­æ–­ï¼Œå¹¶åœ¨ç»ˆæ­¢ç¨‹åºæ—¶å…³é—­å®¢æˆ·ç«¯:
+         * 3.Æô¶¯streamÁ÷£¬ÈÃÆäÒ»Ö±ÔËĞĞ
+         * Í¨¹ıµ÷ÓÃËüµÄstart()º¯Êı£¬ÎÒÃÇ¿ÉÒÔ´¥·¢Õâ¸ö¿Í»§»úµÄÖ´ĞĞ¡£ÔÚ´Ë¿Í»§»úÉÏµ÷ÓÃclose()Ö®Ç°£¬Ö´ĞĞ²»»áÍ£Ö¹¡£
+         * ÀıÈç£¬ÎÒÃÇ¿ÉÒÔÌí¼ÓÒ»¸ö´øÓĞµ¹¼ÆÊ±ËøãÅµÄ¹Ø»ú¹³×ÓÀ´²¶»ñÓÃ»§ÖĞ¶Ï£¬²¢ÔÚÖÕÖ¹³ÌĞòÊ±¹Ø±Õ¿Í»§¶Ë:
          */
         final CountDownLatch latch = new CountDownLatch(1);
         // attach shutdown handler to catch control-c
